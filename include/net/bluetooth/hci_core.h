@@ -687,7 +687,7 @@ struct hci_dev *hci_dev_get_type(__u8 amp_type);
 struct hci_dev *hci_alloc_dev(void);
 void hci_free_dev(struct hci_dev *hdev);
 int hci_register_dev(struct hci_dev *hdev);
-int hci_unregister_dev(struct hci_dev *hdev);
+void hci_unregister_dev(struct hci_dev *hdev);
 int hci_suspend_dev(struct hci_dev *hdev);
 int hci_resume_dev(struct hci_dev *hdev);
 int hci_dev_open(__u16 dev);
