@@ -1,31 +1,33 @@
 #!/bin/bash
 
 # Written by cybojenix <anthonydking@gmail.com>
+# Rewrtten by skyinfo <sh.skyinfo@gmail.com>
 # credits to Rashed for the base of zip making
 # credits to the internet for filling in else where
 
-echo "this is an open source script, feel free to use and share it"
 
 daytime=$(date +%d"-"%m"-"%Y"_"%H"-"%M)
 
 location=.
+kernelname=SKernel
 vendor=lge
-version=3.4.0
+
 
 if [ -z $target ]; then
-    echo "choose your target device"
-    echo "1) l3 ii"
-    echo "2) l5 e610"
-    echo "3) l5 e612"
-    echo "4) l7"
-    read -p "1/2/3: " choice
+    echo "Select Model to build SKernel"
+    echo "1) L5: E610: NFC"
+    echo "2) L5: E612: No NFC"
+    read -p "Selection : " choice
     case "$choice" in
-        1 ) export target=e430 ; export defconfig=vee3-rev_11_led_defconfig;;
-        2 ) export target=e610 ; export defconfig=cyanogenmod_m4_defconfig;;
-        3 ) export target=e612 ; export defconfig=cyanogenmod_m4_nonfc_defconfig;;
-        4 ) export target=p700 ; export defconfig=cyanogenmod_u0_defconfig;;
-        * ) echo "invalid choice"; sleep 2 ; $0;;
-    esac
+        1 ) export target=e610 ; export defconfig=cyanogenmod_m4_defconfig;;
+        2 ) export target=e612 ; export defconfig=cyanogenmod_m4_nonfc_defconfig;;
+        * ) echo "Invalid choice"; sleep 2 ; $0;;
+esac
+fi # [ -z $target ]
+
+if [ -z $version ]; then
+read -p "Version : " kernelver
+export version=$kernelver
 fi # [ -z $target ]
 
 if [ -z $compiler ]; then
@@ -34,7 +36,7 @@ if [ -z $compiler ]; then
     elif [ -f arm-eabi-4.6/bin/arm-eabi-* ]; then # [ -f ../arm-eabi-4.6/bin/arm-eabi-* ]
         export compiler=arm-eabi-4.6/bin/arm-eabi-
     else # [ -f arm-eabi-4.6/bin/arm-eabi-* ]
-        echo "please specify a location, including the '/bin/arm-eabi-' at the end "
+        echo "Please specify Compiler full path"
         read compiler
     fi # [ -z $compiler ]
 fi # [ -f ../arm-eabi-4.6/bin/arm-eabi-* ]
@@ -43,15 +45,15 @@ cd $location
 export ARCH=arm
 export CROSS_COMPILE=$compiler
 if [ -z "$clean" ]; then
-    read -p "do make clean mrproper?(y/n)" clean
+    read -p "Do make clean mrproper?(y/n)" clean
 fi # [ -z "$clean" ]
 case "$clean" in
-    y|Y ) echo "cleaning..."; make clean mrproper;;
-    n|N ) echo "continuing...";;
-    * ) echo "invalid option"; sleep 2 ; build.sh;;
+    y|Y ) echo "Cleaning..."; make clean mrproper;;
+    n|N ) echo "Proceeding to build";;
+    * ) echo "Invalid option"; sleep 2 ; build.sh;;
 esac
 
-echo "now building the kernel"
+echo "Proceeding to build SKernel"
 
 START=$(date +%s)
 
@@ -74,7 +76,7 @@ if [ -f arch/arm/boot/zImage ]; then
 
     find . -name *.ko | xargs cp -a --target-directory=zip-creator/system/lib/modules/
 
-    zipfile="$vendor-$target-v$version-$daytime.zip"
+    zipfile="$kernelname-$kernelver-$target-$daytime.zip"
     cd zip-creator
     rm -f *.zip
     zip -r $zipfile * -x *kernel/.gitignore*

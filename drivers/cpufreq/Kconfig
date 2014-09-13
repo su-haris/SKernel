@@ -124,6 +124,26 @@ config CPU_FREQ_DEFAULT_GOV_SMARTASS2
 	help
 	  Use the CPUFreq governor 'smartassV2' as default.
 
+config CPU_FREQ_DEFAULT_GOV_DARKSIDE
+	bool "darkside"
+	select CPU_FREQ_GOV_DARKSIDE
+	help
+	Use the CPUFreq governor 'darkside' as default
+
+config CPU_FREQ_DEFAULT_GOV_WHEATLEY
+	bool "wheatley"
+	select CPU_FREQ_GOV_WHEATLEY
+	select CPU_FREQ_GOV_PERFORMANCE
+	help
+	Use the CPUFreq governor 'wheatley' as default.
+
+config CPU_FREQ_DEFAULT_GOV_SMARTMAX
+	bool "smartmax"
+	select CPU_FREQ_GOV_SMARTMAX
+	help
+	Use the CPUFreq governor 'smartmax' as default
+
+
 config CPU_FREQ_DEFAULT_GOV_SMARTASSH3
 	bool "SmartassH3"
 	select CPU_FREQ_GOV_SMARTASSH3
@@ -249,6 +269,25 @@ config CPU_FREQ_GOV_INTELLIACTIVE
 	module will be called cpufreq_interactive.
 	For details, take a look at linux/Documentation/cpu-freq.
 	If in doubt, say N.
+
+config CPU_FREQ_GOV_SMARTMAX
+	tristate "'smartmax' cpufreq policy governor"
+	select CPU_FREQ_TABLE
+	help
+	'smartmax' combined ondemand and smartass2
+
+config CPU_FREQ_GOV_WHEATLEY
+	tristate "'wheatley' cpufreq governor"
+	depends on CPU_FREQ
+	
+
+config CPU_FREQ_GOV_DARKSIDE
+	tristate "'darkside' cpufreq governor"
+	depends on CPU_FREQ
+	help
+	'darkside' - a "slightly more aggresive smart" optimized governor!
+	If in doubt, say N.
+
 
 config CPU_FREQ_GOV_SMARTASSH3
   tristate "'SmartassH3' cpufreq governor"
