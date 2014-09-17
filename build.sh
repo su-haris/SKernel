@@ -49,11 +49,11 @@ if [ -z "$clean" ]; then
 fi # [ -z "$clean" ]
 case "$clean" in
     y|Y ) echo "Cleaning..."; make clean mrproper;;
-    n|N ) echo "Proceeding to build";;
+    n|N ) echo "Proceeding to build SKernel";;
     * ) echo "Invalid option"; sleep 2 ; build.sh;;
 esac
 
-echo "Proceeding to build SKernel"
+
 
 START=$(date +%s)
 
