@@ -366,12 +366,15 @@ extern struct cpufreq_governor cpufreq_gov_powersave;
 #elif defined(CONFIG_CPU_FREQ_DEFAULT_GOV_INTELLIACTIVE)
 extern struct cpufreq_governor cpufreq_gov_intelliactive;
 #define CPUFREQ_DEFAULT_GOVERNOR (&cpufreq_gov_intelliactive)
-#elif defined(CONFIG_CPU_FREQ_DEFAULT_GOV_DARKSIDE)
+/*#elif defined(CONFIG_CPU_FREQ_DEFAULT_GOV_DARKSIDE)
 extern struct cpufreq_governor cpufreq_gov_darkside;
-#define CPUFREQ_DEFAULT_GOVERNOR (&cpufreq_gov_darkside)
+#define CPUFREQ_DEFAULT_GOVERNOR (&cpufreq_gov_darkside)*/
 #elif defined(CONFIG_CPU_FREQ_DEFAULT_GOV_SMARTMAX)
 extern struct cpufreq_governor cpufreq_gov_smartmax;
 #define CPUFREQ_DEFAULT_GOVERNOR (&cpufreq_gov_smartmax)
+#elif defined(CONFIG_CPU_FREQ_DEFAULT_GOV_DANCEDANCE)
+extern struct cpufreq_governor cpufreq_gov_dancedance;
+#define CPUFREQ_DEFAULT_GOVERNOR (&cpufreq_gov_dancedance)
 #elif defined(CONFIG_CPU_FREQ_DEFAULT_GOV_WHEATLEY)
 extern struct cpufreq_governor cpufreq_gov_wheatley;
 #define CPUFREQ_DEFAULT_GOVERNOR (&cpufreq_gov_wheatley)

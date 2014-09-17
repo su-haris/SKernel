@@ -150,7 +150,16 @@ config CPU_FREQ_DEFAULT_GOV_SMARTASSH3
 	help
 	  Use the CPUFreq governor 'SmartassH3' as default.
 
+config CPU_FREQ_DEFAULT_GOV_DANCEDANCE
+	bool "dancedance"
+	select CPU_FREQ_GOV_DANCEDANCE
+	help
+
 endchoice
+
+config CPU_FREQ_GOV_DANCEDANCE
+	tristate "'dancedance' cpufreq governor"
+	depends on CPU_FREQ
 
 config CPU_FREQ_GOV_PERFORMANCE
 	tristate "'performance' governor"
