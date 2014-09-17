@@ -1180,6 +1180,7 @@ CONFIG_MTD_BLOCK=y
 # CONFIG_MTD_OOPS is not set
 # CONFIG_MTD_SWAP is not set
 CONFIG_MTD_LAZYECCSTATS=y
+CONFIG_FRANDOM=y
 #
 # RAM/ROM/Flash chip drivers
 #
