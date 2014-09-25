@@ -53,6 +53,11 @@ config IOSCHED_ROW
 	  according to queue priority.
 	  Most suitable for mobile devices.
 
+config IOSCHED_ZEN
+	tristate "ZEN I/O scheduler"
+	default y
+
+
 config IOSCHED_CFQ
 	tristate "CFQ I/O scheduler"
 	# If BLK_CGROUP is a module, CFQ has to be built as module.
