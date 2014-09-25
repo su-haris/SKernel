@@ -10,9 +10,14 @@
 //LGE_CHANGE_S[panchaxari.t@lge.com][patch from 3.4.26 kernel]
 /*
  * On pre-ARMv6 hardware this results in a swp-based implementation,
- * which is the most efficient. For ARMv6+, we emit a pair of exclusive
- * accesses instead.
+ * which is the most efficient. For ARMv6+, we have exclusive memory
+ * accessors and use atomic_dec to avoid the extra xchg operations
+ * on the locking slowpaths.
  */
+#if __LINUX_ARM_ARCH__ < 6
 #include <asm-generic/mutex-xchg.h>
+#else
+#include <asm-generic/mutex-dec.h>
+#endif
 #endif
 //LGE_CHANGE_E[panchaxari.t@lge.com][patch from 3.4.26 kernel]
