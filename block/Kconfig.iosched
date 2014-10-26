@@ -120,6 +120,13 @@ config IOSCHED_FIOPS
           IOPS equally among all processes in the system. It's mainly for
           Flash based storage.
 
+config IOSCHED_VR
+	tristate "V(R) I/O scheduler"
+	default y
+	---help---
+	  Request are chosen according to SSTF with a penalty of rev_penalty
+	  for switching head direction.
+
 choice
 	prompt "Default I/O scheduler"
 	default DEFAULT_CFQ
