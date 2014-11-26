@@ -6,10 +6,22 @@
 
 typedef unsigned long __nocast cputime_t;
 
+#define cputime_zero (0UL)
 #define cputime_one_jiffy		jiffies_to_cputime(1)
 #define cputime_to_jiffies(__ct)	(__force unsigned long)(__ct)
 #define cputime_to_scaled(__ct)		(__ct)
 #define jiffies_to_cputime(__hz)	(__force cputime_t)(__hz)
+#define cputime_max ((~0UL >> 1) - 1)
+#define cputime_add(__a, __b) ((__a) + (__b))
+#define cputime_sub(__a, __b) ((__a) - (__b))
+#define cputime_div(__a, __n) ((__a) / (__n))
+#define cputime_halve(__a) ((__a) >> 1)
+#define cputime_eq(__a, __b) ((__a) == (__b))
+#define cputime_gt(__a, __b) ((__a) > (__b))
+#define cputime_ge(__a, __b) ((__a) >= (__b))
+#define cputime_lt(__a, __b) ((__a) < (__b))
+#define cputime_le(__a, __b) ((__a) <= (__b))
+
 
 typedef u64 __nocast cputime64_t;
 
