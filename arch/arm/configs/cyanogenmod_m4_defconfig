@@ -1188,7 +1188,7 @@ CONFIG_MTD_BLOCK=y
 # CONFIG_MTD_OOPS is not set
 # CONFIG_MTD_SWAP is not set
 CONFIG_MTD_LAZYECCSTATS=y
-CONFIG_FRANDOM=y
+
 #
 # RAM/ROM/Flash chip drivers
 #
@@ -1587,6 +1587,7 @@ CONFIG_UNIX98_PTYS=y
 # CONFIG_TRACE_SINK is not set
 CONFIG_DEVMEM=y
 CONFIG_DEVKMEM=y
+CONFIG_FRANDOM=y
 #
 # Serial drivers
 #
@@ -2947,6 +2948,7 @@ CONFIG_NLS_ISO8859_1=y
 # CONFIG_NLS_KOI8_R is not set
 # CONFIG_NLS_KOI8_U is not set
 # CONFIG_NLS_UTF8 is not set
+CONFIG_DYNAMIC_FSYNC=y
 #
 # Kernel hacking
 #
