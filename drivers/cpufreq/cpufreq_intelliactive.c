@@ -719,7 +719,7 @@ spin_lock_irqsave(&target_loads_lock, flags);
 for (i = 0; i < ntarget_loads; i++)
 ret += sprintf(buf + ret, "%u%s", target_loads[i],
 i & 0x1 ? ":" : " ");
-ret += sprintf(buf + --ret, "\n");
+sprintf(buf + ret - 1, "\n");
 spin_unlock_irqrestore(&target_loads_lock, flags);
 return ret;
 }
@@ -754,7 +754,7 @@ spin_lock_irqsave(&above_hispeed_delay_lock, flags);
 for (i = 0; i < nabove_hispeed_delay; i++)
 ret += sprintf(buf + ret, "%u%s", above_hispeed_delay[i],
 i & 0x1 ? ":" : " ");
-ret += sprintf(buf + --ret, "\n");
+sprintf(buf + ret - 1, "\n");
 spin_unlock_irqrestore(&above_hispeed_delay_lock, flags);
 return ret;
 }
