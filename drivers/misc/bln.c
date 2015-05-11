@@ -12,23 +12,18 @@
 #include <linux/init.h>
 #include <linux/earlysuspend.h>
 #include <linux/device.h>
+#include <linux/module.h>
 #include <linux/miscdevice.h>
 #include <linux/bln.h>
 #include <linux/mutex.h>
 #include <linux/timer.h>
 #include <linux/wakelock.h>
 
-<<<<<<< HEAD
-static bool bln_enabled = true; /* is BLN function is enabled */
-=======
-bool bln_enabled = false; /* is BLN function is enabled */
-EXPORT_SYMBOL(bln_enabled);
-
->>>>>>> e109dc475850e7ba66112cace6cc235ed7bcbd38
+static bool bln_enabled = false; /* is BLN function is enabled */
 static bool bln_ongoing = false; /* ongoing LED Notification */
 static int bln_blink_state = 0;
-static int bln_blink_interval = 500;
-static int bln_blink_max_count = 600;
+static int bln_blink_interval = 500; /* on / off every 500ms */
+static int bln_blink_max_count = 600; /* 10 minutes */
 static bool bln_suspended = false; /* is system suspended */
 static struct bln_implementation *bln_imp = NULL;
 static bool in_kernel_blink = false;
@@ -84,7 +79,15 @@ static void enable_led_notification(void)
 		blink_timer.expires = jiffies +
 				msecs_to_jiffies(bln_blink_interval);
 		blink_count = bln_blink_max_count;
-		add_timer(&blink_timer);
+		/*
+		 * Check for pending timer and use mod_timer
+		 * if it exists instead of attempting to
+		 * add another, which results in a panic
+		 */
+		if (timer_pending(&blink_timer))
+			mod_timer(&blink_timer, blink_timer.expires);
+		else
+			add_timer(&blink_timer);
 	}
 
 	bln_enable_backlights();
@@ -371,3 +374,5 @@ static int __init bln_control_init(void)
 }
 
 device_initcall(bln_control_init);
+
+
