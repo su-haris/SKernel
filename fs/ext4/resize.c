@@ -991,7 +991,7 @@ static void update_backups(struct super_block *sb,
 		    (err = ext4_journal_restart(handle, EXT4_MAX_TRANS_DATA)))
 			break;
 
-		bh = sb_getblk(sb, group * bpg + blk_off);
+		bh = sb_getblk(sb, ((ext4_fsblk_t)group) * bpg + blk_off);
 		if (!bh) {
 			err = -ENOMEM;
 			break;
@@ -1152,7 +1152,7 @@ static void ext4_update_super(struct super_block *sb,
 	struct ext4_new_group_data *group_data = flex_gd->groups;
 	struct ext4_sb_info *sbi = EXT4_SB(sb);
 	struct ext4_super_block *es = sbi->s_es;
-	int i, ret;
+	int i;
 
 	BUG_ON(flex_gd->count == 0 || group_data == NULL);
 	/*
