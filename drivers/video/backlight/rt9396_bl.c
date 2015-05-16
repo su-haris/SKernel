@@ -759,7 +759,7 @@ ssize_t rt9396_show_reg(struct device *dev, struct device_attribute *attr, char 
 {
 	struct rt9396_driver_data *drvdata = dev_get_drvdata(dev);
 	int len = 0;
-	unsigned char val;
+	unsigned char val = 0;
 
 	len += snprintf(buf, PAGE_SIZE, "\nrt9396 Registers is following..\n");
 	rt9396_read(drvdata->client, 0x00, &val);
