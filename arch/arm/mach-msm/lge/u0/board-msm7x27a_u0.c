@@ -266,9 +266,9 @@ static struct msm_i2c_platform_data msm_gsbi1_qup_i2c_pdata = {
 };
 
 #ifdef CONFIG_ARCH_MSM7X27A
-/*LGE_CHANGE_S[jyothishre.nk@lge.com]20121102:
+/*skyinfo's change! (20/05/2015)
  *Migrating QCT patch to remove pmem and fmem support*/
-#define MSM_RESERVE_MDP_SIZE       	    0x2300000 	// 0x2800000  
+#define MSM_RESERVE_MDP_SIZE       	    0x1800000		//0x2300000 	// 0x2800000  
 #define MSM7x25A_MSM_RESERVE_MDP_SIZE       0x1500000
 
 #define MSM_RESERVE_ADSP_SIZE      	    0x1200000
