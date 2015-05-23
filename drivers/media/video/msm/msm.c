@@ -2194,7 +2194,8 @@ void msm_release_ion_client(struct kref *ref)
 	struct msm_cam_media_controller *mctl = container_of(ref,
 		struct msm_cam_media_controller, refcount);
 	pr_err("%s Calling ion_client_destroy\n", __func__);
-	ion_client_destroy(mctl->client);
+	if (mctl)
+		ion_client_destroy(mctl->client);
 /*LGE_CHANGE_S QCT PATCH for kernel panic on IOMMU SR 01067319 2013-01-04 */
 	mctl->client = NULL;
 /*LGE_CHANGE_E QCT PATCH for kernel panic on IOMMU SR 01067319 2013-01-04 */
