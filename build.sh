@@ -1,36 +1,37 @@
 #!/bin/bash
 
 # Written by Caio Oliveira aka Caio99BR <caiooliveirafarias0@gmail.com>
+# Rewritten by Suhail aka skyinfo <sh.skyinfo@gmail.com>
 # credits to the internet for filling in else where
 
 inchoice() {
 echo ""
-echo "Script says: Choose to which you will build"; sleep .5
-echo "Caio99BR says: 1) L1 II Single"; sleep .5
-echo "Caio99BR says: 2) L1 II Dual"; sleep .5
-echo "Caio99BR says: 3) L3 II Single"; sleep .5
-echo "Caio99BR says: 4) L3 II Dual"; sleep .5
+echo "Choose the device to build for!"; sleep .5
+echo "1) L5 E610 (NFC)"; sleep .5
+echo "2) L5 E612 (No NFC)"; sleep .5
+echo "3) L7 P700 (NFC)"; sleep .5
+echo "4) L7 P705 (No NFC)"; sleep .5
 }
 
 devicechoice() {
 read -p "Choice: " -n 1 -s choice
 case "$choice" in
-	1 ) export target="L1"; export serie="II"; export variant="Single"; export defconfig=cyanogenmod_vee1_defconfig;;
-	2 ) export target="L1"; export serie="II"; export variant="Dual"; export defconfig=cyanogenmod_vee1ds_defconfig;;
-	3 ) export target="L3"; export serie="II"; export variant="Single"; export defconfig=cyanogenmod_vee3_defconfig;;
-	4 ) export target="L3"; export serie="II"; export variant="Dual"; export defconfig=cyanogenmod_vee3ds_defconfig;;
+	1 ) export target="e610"; export defconfig=skernel_m4_defconfig;;
+	2 ) export target="e612"; export defconfig=skernel_m4_nonfc_defconfig;;
+	3 ) export target="p700"; export defconfig=skernel_u0_defconfig;;
+	4 ) export target="p705"; export defconfig=skernel_u0_nonfc_defconfig;;
 	* ) echo "$choice - This option is not valid"; sleep 2; devicechoice;;
 esac
-echo "$choice - $target $serie $variant"; sleep .5
+echo "$choice - $target "; sleep .5
 }
 
 mainprocess() {
 inchoice
 devicechoice
 echo ""
-echo "Script says: Choose the place of the toolchain"; sleep .5
+echo "Choose the place of the toolchain"; sleep .5
 echo "Google GCC - 1) 4.7   | 2) 4.8"; sleep .5
-echo "Linaro GCC - 3) 4.6.4 | 4) 4.7.4 | 5) 4.8.4"; sleep .5
+echo "Linaro GCC - 3) 4.6.4 | 4) 4.7.4 | 5) 4.8.4 | 6) 4.9.3"; sleep .5
 echo "or any key to Choose the place"; sleep .5
 read -p "Choice: " -n 1 -s toolchain
 case "$toolchain" in
@@ -39,6 +40,7 @@ case "$toolchain" in
 	3 ) export CROSS_COMPILE="../android_prebuilt_toolchains/arm-unknown-linux-gnueabi-linaro_4.6.4-2013.05/bin/arm-unknown-linux-gnueabi-";;
 	4 ) export CROSS_COMPILE="../android_prebuilt_toolchains/arm-unknown-linux-gnueabi-linaro_4.7.4-2013.12/bin/arm-unknown-linux-gnueabi-";;
 	5 ) export CROSS_COMPILE="../android_prebuilt_toolchains/arm-linux-gnueabi-linaro_4.8.4-2014.11/bin/arm-linux-gnueabi-";;
+	6 ) export CROSS_COMPILE="../android_prebuilt_toolchains/arm-cortex-linux-gnueabi-linaro_4.9.3-2015.03/bin/arm-cortex-linux-gnueabi-";;
 	* ) toolchainplace;;
 esac
 echo "$CROSS_COMPILE"; sleep .5
@@ -46,13 +48,15 @@ echo "$CROSS_COMPILE"; sleep .5
 
 toolchainplace() {
 echo ""
-echo "Script says: Please specify a location"; sleep 1
-echo "Script says: and the prefix of the chosen toolchain at the end"; sleep 1
+echo "Please specify a location"; sleep 1
+echo "and the prefix of the chosen toolchain at the end"; sleep 1
 echo "Caio99BR says: GCC 4.6 ex. ../arm-eabi-4.6/bin/arm-eabi-"; sleep 2
 read -p "Place: " -s CROSS_COMPILE
 }
 
 kernelclean() {
+echo "Do you want to clean (make clean)?"
+read -p #Needs to be fixed
 echo "Cleaning..."
 make clean mrproper &> /dev/null
 }
@@ -105,7 +109,7 @@ sed 's/Single/Dual/' zip-creator/META-INF/com/google/android/updater-script > zi
 rm zip-creator/META-INF/com/google/android/updater-script
 mv zip-creator/META-INF/com/google/android/updater-script-temp zip-creator/META-INF/com/google/android/updater-script
 }
-
+#Needs to be fixed
 tosingle() {
 sed 's/Dual/Single/' zip-creator/META-INF/com/google/android/updater-script > zip-creator/META-INF/com/google/android/updater-script-temp
 rm zip-creator/META-INF/com/google/android/updater-script
@@ -113,7 +117,7 @@ mv zip-creator/META-INF/com/google/android/updater-script-temp zip-creator/META-
 }
 
 ziperror() {
-echo "Script says: The build failed so a zip won't be created"
+echo "The build failed so a zip won't be created"
 }
 
 ziper() {
@@ -123,6 +127,7 @@ zip -r $zipfile * -x *kernel/.gitignore*
 cd ..
 }
 
+#Needs to be fixed
 buildprocess() {
 echo "Building..."
 sleep 1
@@ -147,8 +152,8 @@ fi
 scriptrev=8
 
 location=.
-custom_kernel=VeeKernel
-version=Local
+custom_kernel=SKernel
+version=M7
 
 cd $location
 export ARCH=arm
@@ -169,11 +174,11 @@ case $clean in
 esac
 
 echo ""
-echo -e "Script says: Now, building the $custom_kernel for $target $serie $variant $version Edition!"; sleep .5
+echo -e "Now, building the $custom_kernel for $target $version Edition!"; sleep .5
 
 echo ""
-echo "Script says: You want to see the details of kernel build?"
-read -p "Script says: Enter any key for Yes or N for No: " -n 1 -t 10 -s clean
+echo "You want to see the details of kernel build?"
+read -p "Enter any key for Yes or N for No: " -n 1 -t 10 -s clean
 START=$(date +"%s")
 case $clean in
 	n) buildprocess &> /dev/null | preloop;;
