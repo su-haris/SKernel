@@ -991,11 +991,6 @@ config CCACHE
          help
            Enabling this option will use ccache when compiling.
 
-config LINARO
-         bool "Use Linaro optimizations"
-         help
-           Enabling this option will use Linaro optimizations.
-
 config SYSCTL
 	bool
 
