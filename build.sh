@@ -57,9 +57,9 @@ if [ -d ../android_prebuilt_toolchains ]; then
 	echo "1) 4.7 Google GCC"
 	echo "2) 4.8 Google GCC"
 	echo "3) 4.6.4 Linaro GCC"
-	echo "3) 4.7.4 Linaro GCC"
-	echo "3) 4.8.4 Linaro GCC"
-	echo "3) 4.9.3 Linaro GCC"
+	echo "4) 4.7.4 Linaro GCC"
+	echo "5) 4.8.4 Linaro GCC"
+	echo "6) 4.9.3 Linaro GCC"
 	read -p "Choice: " -n 1 -s toolchain
 	case "$toolchain" in
 		1 ) export CROSS_COMPILE="../android_prebuilt_toolchains/arm-eabi-4.7/bin/arm-eabi-";;
