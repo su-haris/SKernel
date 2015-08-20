@@ -218,7 +218,7 @@ esac
 # Menu - Start
 
 customkernel=SKernel
-version=M7-T
+version=M6
 export ARCH=arm
 
 buildsh() {
