@@ -1980,11 +1980,7 @@ repeat:
 		group = ac->ac_g_ex.fe_group;
 
 		for (i = 0; i < ngroups; group++, i++) {
-			/*
-			 * Artificially restricted ngroups for non-extent
-			 * files makes group > ngroups possible on first loop.
-			 */
-			if (group >= ngroups)
+			if (group == ngroups)
 				group = 0;
 
 			/* This now checks without needing the buddy page */
@@ -4135,7 +4131,7 @@ static void ext4_mb_add_n_trim(struct ext4_allocation_context *ac)
 		/* The max size of hash table is PREALLOC_TB_SIZE */
 		order = PREALLOC_TB_SIZE - 1;
 	/* Add the prealloc space to lg */
-	spin_lock(&lg->lg_prealloc_lock);
+	rcu_read_lock();
 	list_for_each_entry_rcu(tmp_pa, &lg->lg_prealloc_list[order],
 						pa_inode_list) {
 		spin_lock(&tmp_pa->pa_lock);
@@ -4159,12 +4155,12 @@ static void ext4_mb_add_n_trim(struct ext4_allocation_context *ac)
 	if (!added)
 		list_add_tail_rcu(&pa->pa_inode_list,
 					&lg->lg_prealloc_list[order]);
-	spin_unlock(&lg->lg_prealloc_lock);
+	rcu_read_unlock();
 
 	/* Now trim the list to be not more than 8 elements */
 	if (lg_prealloc_count > 8) {
 		ext4_mb_discard_lg_preallocations(sb, lg,
-						  order, lg_prealloc_count);
+						order, lg_prealloc_count);
 		return;
 	}
 	return ;
@@ -4644,16 +4640,11 @@ do_more:
 		 * blocks being freed are metadata. these blocks shouldn't
 		 * be used until this transaction is committed
 		 */
-	retry:
 		new_entry = kmem_cache_alloc(ext4_free_data_cachep, GFP_NOFS);
 		if (!new_entry) {
-			/*
-			 * We use a retry loop because
-			 * ext4_free_blocks() is not allowed to fail.
-			 */
-			cond_resched();
-			congestion_wait(BLK_RW_ASYNC, HZ/50);
-			goto retry;
+			ext4_mb_unload_buddy(&e4b);
+			err = -ENOMEM;
+			goto error_return;
 		}
 		new_entry->efd_start_cluster = bit;
 		new_entry->efd_group = block_group;
@@ -4998,9 +4989,8 @@ int ext4_trim_fs(struct super_block *sb, struct fstrim_range *range)
 	end = start + (range->len >> sb->s_blocksize_bits) - 1;
 	minlen = range->minlen >> sb->s_blocksize_bits;
 
-	if (minlen > EXT4_CLUSTERS_PER_GROUP(sb) ||
-	    start >= max_blks ||
-	    range->len < sb->s_blocksize)
+	if (unlikely(minlen > EXT4_CLUSTERS_PER_GROUP(sb)) ||
+	    unlikely(start >= max_blks))
 		return -EINVAL;
 	if (end >= max_blks)
 		end = max_blks - 1;
