@@ -167,11 +167,13 @@ int radeon_cs_parser_init(struct radeon_cs_parser *p, void *data)
 	u32 ring = RADEON_CS_RING_GFX;
 	s32 priority = 0;
 
+	INIT_LIST_HEAD(&p->validated);
+
 	if (!cs->num_chunks) {
 		return 0;
 	}
+
 	/* get chunks */
-	INIT_LIST_HEAD(&p->validated);
 	p->idx = 0;
 	p->chunk_ib_idx = -1;
 	p->chunk_relocs_idx = -1;
@@ -377,7 +379,7 @@ static int radeon_cs_ib_chunk(struct radeon_device *rdev,
 	if (r) {
 		DRM_ERROR("Failed to schedule IB !\n");
 	}
-	return 0;
+	return r;
 }
 
 static int radeon_bo_vm_update_pte(struct radeon_cs_parser *parser,

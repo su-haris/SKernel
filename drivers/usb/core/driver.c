@@ -530,22 +530,10 @@ int usb_match_device(struct usb_device *dev, const struct usb_device_id *id)
 }
 
 /* returns 0 if no match, 1 if match */
-int usb_match_one_id(struct usb_interface *interface,
-		     const struct usb_device_id *id)
+int usb_match_one_id_intf(struct usb_device *dev,
+			  struct usb_host_interface *intf,
+			  const struct usb_device_id *id)
 {
-	struct usb_host_interface *intf;
-	struct usb_device *dev;
-
-	/* proc_connectinfo in devio.c may call us with id == NULL. */
-	if (id == NULL)
-		return 0;
-
-	intf = interface->cur_altsetting;
-	dev = interface_to_usbdev(interface);
-
-	if (!usb_match_device(dev, id))
-		return 0;
-
 	/* The interface class, subclass, and protocol should never be
 	 * checked for a match if the device class is Vendor Specific,
 	 * unless the match record specifies the Vendor ID. */
@@ -569,6 +557,26 @@ int usb_match_one_id(struct usb_interface *interface,
 		return 0;
 
 	return 1;
+}
+
+/* returns 0 if no match, 1 if match */
+int usb_match_one_id(struct usb_interface *interface,
+		     const struct usb_device_id *id)
+{
+	struct usb_host_interface *intf;
+	struct usb_device *dev;
+
+	/* proc_connectinfo in devio.c may call us with id == NULL. */
+	if (id == NULL)
+		return 0;
+
+	intf = interface->cur_altsetting;
+	dev = interface_to_usbdev(interface);
+
+	if (!usb_match_device(dev, id))
+		return 0;
+
+	return usb_match_one_id_intf(dev, intf, id);
 }
 EXPORT_SYMBOL_GPL(usb_match_one_id);
 
@@ -1757,6 +1765,18 @@ static int autosuspend_check(struct usb_device *udev)
 		dev_dbg(&udev->dev, "remote wakeup needed for autosuspend\n");
 		return -EOPNOTSUPP;
 	}
+
+	/*
+	 * If the device is a direct child of the root hub and the HCD
+	 * doesn't handle wakeup requests, don't allow autosuspend when
+	 * wakeup is needed.
+	 */
+	if (w && udev->parent == udev->bus->root_hub &&
+			bus_to_hcd(udev->bus)->cant_recv_wakeups) {
+		dev_dbg(&udev->dev, "HCD doesn't handle wakeup requests\n");
+		return -EOPNOTSUPP;
+	}
+
 	udev->do_remote_wakeup = w;
 	return 0;
 }
@@ -1779,10 +1799,13 @@ int usb_runtime_suspend(struct device *dev)
 	if (status == -EAGAIN || status == -EBUSY)
 		usb_mark_last_busy(udev);
 
-	/* The PM core reacts badly unless the return code is 0,
-	 * -EAGAIN, or -EBUSY, so always return -EBUSY on an error.
+	/*
+	 * The PM core reacts badly unless the return code is 0,
+	 * -EAGAIN, or -EBUSY, so always return -EBUSY on an error
+	 * (except for root hubs, because they don't suspend through
+	 * an upstream port like other USB devices).
 	 */
-	if (status != 0)
+	if (status != 0 && udev->parent)
 		return -EBUSY;
 	return status;
 }

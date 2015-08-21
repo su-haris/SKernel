@@ -287,7 +287,7 @@ static int xhci_stop_device(struct xhci_hcd *xhci, int slot_id, int suspend)
 		if (virt_dev->eps[i].ring && virt_dev->eps[i].ring->dequeue)
 			xhci_queue_stop_endpoint(xhci, slot_id, i, suspend);
 	}
-	cmd->command_trb = xhci->cmd_ring->enqueue;
+	cmd->command_trb = xhci_find_next_enqueue(xhci->cmd_ring);
 	list_add_tail(&cmd->cmd_list, &virt_dev->cmd_list);
 	xhci_queue_stop_endpoint(xhci, slot_id, 0, suspend);
 	xhci_ring_cmd_db(xhci);
@@ -343,8 +343,6 @@ static void xhci_disable_port(struct usb_hcd *hcd, struct xhci_hcd *xhci,
 
 	/* Write 1 to disable the port */
 	xhci_writel(xhci, port_status | PORT_PE, addr);
-	if (xhci->quirks & XHCI_PORTSC_DELAY)
-		ndelay(100);
 	port_status = xhci_readl(xhci, addr);
 	xhci_dbg(xhci, "disable port, actual port %d status  = 0x%x\n",
 			wIndex, port_status);
@@ -385,14 +383,16 @@ static void xhci_clear_port_change_bit(struct xhci_hcd *xhci, u16 wValue,
 		status = PORT_PLC;
 		port_change_bit = "link state";
 		break;
+	case USB_PORT_FEAT_C_PORT_CONFIG_ERROR:
+		status = PORT_CEC;
+		port_change_bit = "config error";
+		break;
 	default:
 		/* Should never happen */
 		return;
 	}
 	/* Change bits are all write 1 to clear */
 	xhci_writel(xhci, port_status | status, addr);
-	if (xhci->quirks & XHCI_PORTSC_DELAY)
-		ndelay(100);
 	port_status = xhci_readl(xhci, addr);
 	xhci_dbg(xhci, "clear port %s change, actual port %d status  = 0x%x\n",
 			port_change_bit, wIndex, port_status);
@@ -424,8 +424,6 @@ void xhci_set_link_state(struct xhci_hcd *xhci, __le32 __iomem **port_array,
 	temp &= ~PORT_PLS_MASK;
 	temp |= PORT_LINK_STROBE | link_state;
 	xhci_writel(xhci, temp, port_array[port_id]);
-	if (xhci->quirks & XHCI_PORTSC_DELAY)
-		ndelay(100);
 }
 
 void xhci_set_remote_wake_mask(struct xhci_hcd *xhci,
@@ -452,8 +450,6 @@ void xhci_set_remote_wake_mask(struct xhci_hcd *xhci,
 		temp &= ~PORT_WKOC_E;
 
 	xhci_writel(xhci, temp, port_array[port_id]);
-	if (xhci->quirks & XHCI_PORTSC_DELAY)
-		ndelay(100);
 }
 
 /* Test and clear port RWC bit */
@@ -467,8 +463,6 @@ void xhci_test_and_clear_bit(struct xhci_hcd *xhci, __le32 __iomem **port_array,
 		temp = xhci_port_state_to_neutral(temp);
 		temp |= port_bit;
 		xhci_writel(xhci, temp, port_array[port_id]);
-		if (xhci->quirks & XHCI_PORTSC_DELAY)
-			ndelay(100);
 	}
 }
 
@@ -588,6 +582,8 @@ int xhci_hub_control(struct usb_hcd *hcd, u16 typeReq, u16 wValue,
 				status |= USB_PORT_STAT_C_LINK_STATE << 16;
 			if ((temp & PORT_WRC))
 				status |= USB_PORT_STAT_C_BH_RESET << 16;
+			if ((temp & PORT_CEC))
+				status |= USB_PORT_STAT_C_CONFIG_ERROR << 16;
 		}
 
 		if (hcd->speed != HCD_USB3) {
@@ -721,12 +717,39 @@ int xhci_hub_control(struct usb_hcd *hcd, u16 typeReq, u16 wValue,
 			break;
 		case USB_PORT_FEAT_LINK_STATE:
 			temp = xhci_readl(xhci, port_array[wIndex]);
+
+			/* Disable port */
+			if (link_state == USB_SS_PORT_LS_SS_DISABLED) {
+				xhci_dbg(xhci, "Disable port %d\n", wIndex);
+				temp = xhci_port_state_to_neutral(temp);
+				/*
+				 * Clear all change bits, so that we get a new
+				 * connection event.
+				 */
+				temp |= PORT_CSC | PORT_PEC | PORT_WRC |
+					PORT_OCC | PORT_RC | PORT_PLC |
+					PORT_CEC;
+				xhci_writel(xhci, temp | PORT_PE,
+					port_array[wIndex]);
+				temp = xhci_readl(xhci, port_array[wIndex]);
+				break;
+			}
+
+			/* Put link in RxDetect (enable port) */
+			if (link_state == USB_SS_PORT_LS_RX_DETECT) {
+				xhci_dbg(xhci, "Enable port %d\n", wIndex);
+				xhci_set_link_state(xhci, port_array, wIndex,
+						link_state);
+				temp = xhci_readl(xhci, port_array[wIndex]);
+				break;
+			}
+
 			/* Software should not attempt to set
-			 * port link state above '5' (Rx.Detect) and the port
+			 * port link state above '3' (U3) and the port
 			 * must be enabled.
 			 */
 			if ((temp & PORT_PE) == 0 ||
-				(link_state > USB_SS_PORT_LS_RX_DETECT)) {
+				(link_state > USB_SS_PORT_LS_U3)) {
 				xhci_warn(xhci, "Cannot set link state.\n");
 				goto error;
 			}
@@ -764,8 +787,6 @@ int xhci_hub_control(struct usb_hcd *hcd, u16 typeReq, u16 wValue,
 			 */
 			xhci_writel(xhci, temp | PORT_POWER,
 					port_array[wIndex]);
-			if (xhci->quirks & XHCI_PORTSC_DELAY)
-				ndelay(100);
 
 			temp = xhci_readl(xhci, port_array[wIndex]);
 			xhci_dbg(xhci, "set port power, actual port %d status  = 0x%x\n", wIndex, temp);
@@ -773,8 +794,6 @@ int xhci_hub_control(struct usb_hcd *hcd, u16 typeReq, u16 wValue,
 		case USB_PORT_FEAT_RESET:
 			temp = (temp | PORT_RESET);
 			xhci_writel(xhci, temp, port_array[wIndex]);
-			if (xhci->quirks & XHCI_PORTSC_DELAY)
-				ndelay(100);
 
 			temp = xhci_readl(xhci, port_array[wIndex]);
 			xhci_dbg(xhci, "set port reset, actual port %d status  = 0x%x\n", wIndex, temp);
@@ -790,8 +809,6 @@ int xhci_hub_control(struct usb_hcd *hcd, u16 typeReq, u16 wValue,
 		case USB_PORT_FEAT_BH_PORT_RESET:
 			temp |= PORT_WR;
 			xhci_writel(xhci, temp, port_array[wIndex]);
-			if (xhci->quirks & XHCI_PORTSC_DELAY)
-				ndelay(100);
 
 			temp = xhci_readl(xhci, port_array[wIndex]);
 			break;
@@ -849,6 +866,7 @@ int xhci_hub_control(struct usb_hcd *hcd, u16 typeReq, u16 wValue,
 		case USB_PORT_FEAT_C_OVER_CURRENT:
 		case USB_PORT_FEAT_C_ENABLE:
 		case USB_PORT_FEAT_C_PORT_LINK_STATE:
+		case USB_PORT_FEAT_C_PORT_CONFIG_ERROR:
 			xhci_clear_port_change_bit(xhci, wValue, wIndex,
 					port_array[wIndex], temp);
 			break;
@@ -901,7 +919,7 @@ int xhci_hub_status_data(struct usb_hcd *hcd, char *buf)
 	 */
 	status = bus_state->resuming_ports;
 
-	mask = PORT_CSC | PORT_PEC | PORT_OCC | PORT_PLC | PORT_WRC;
+	mask = PORT_CSC | PORT_PEC | PORT_OCC | PORT_PLC | PORT_WRC | PORT_CEC;
 
 	spin_lock_irqsave(&xhci->lock, flags);
 	/* For each port, did anything change?  If so, set that bit in buf. */
@@ -986,27 +1004,8 @@ int xhci_bus_suspend(struct usb_hcd *hcd)
 			t2 &= ~PORT_WAKE_BITS;
 
 		t1 = xhci_port_state_to_neutral(t1);
-		if (t1 != t2) {
+		if (t1 != t2)
 			xhci_writel(xhci, t2, port_array[port_index]);
-			if (xhci->quirks & XHCI_PORTSC_DELAY)
-				ndelay(100);
-		}
-
-		if (hcd->speed != HCD_USB3) {
-			/* enable remote wake up for USB 2.0 */
-			__le32 __iomem *addr;
-			u32 tmp;
-
-			/* Add one to the port status register address to get
-			 * the port power control register address.
-			 */
-			addr = port_array[port_index] + 1;
-			tmp = xhci_readl(xhci, addr);
-			tmp |= PORT_RWE;
-			xhci_writel(xhci, tmp, addr);
-			if (xhci->quirks & XHCI_PORTSC_DELAY)
-				ndelay(100);
-		}
 	}
 	hcd->state = HC_STATE_SUSPENDED;
 	bus_state->next_statechange = jiffies + msecs_to_jiffies(10);
@@ -1083,27 +1082,8 @@ int xhci_bus_resume(struct usb_hcd *hcd)
 					xhci, port_index + 1);
 			if (slot_id)
 				xhci_ring_device(xhci, slot_id);
-		} else {
+		} else
 			xhci_writel(xhci, temp, port_array[port_index]);
-			if (xhci->quirks & XHCI_PORTSC_DELAY)
-				ndelay(100);
-		}
-
-		if (hcd->speed != HCD_USB3) {
-			/* disable remote wake up for USB 2.0 */
-			__le32 __iomem *addr;
-			u32 tmp;
-
-			/* Add one to the port status register address to get
-			 * the port power control register address.
-			 */
-			addr = port_array[port_index] + 1;
-			tmp = xhci_readl(xhci, addr);
-			tmp &= ~PORT_RWE;
-			xhci_writel(xhci, tmp, addr);
-			if (xhci->quirks & XHCI_PORTSC_DELAY)
-				ndelay(100);
-		}
 	}
 
 	(void) xhci_readl(xhci, &xhci->op_regs->command);
