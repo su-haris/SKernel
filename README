@@ -9,8 +9,8 @@ Initially built for the LG Optimus L5, SKernel now supports all the variants of 
 
 
 Official Maintainers
-Suhail (skyinfo) - LG Optimus L5, L7 and L3 II
-Caio (Caio99BR)  - LG Optimus L3 II
+Suhail (skyinfo) - All devices
+Caio (Caio99BR)  - All devices
 
 For building along with ROM, use the branch 'rom-lp'
 
