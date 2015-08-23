@@ -430,7 +430,7 @@ esac
 # The core of script is here!
 
 if [ -e build.sh ]; then
-	customkernel=CAFKernel
+	customkernel=SKernel
 	export ARCH=arm
 	daytime=$(date +%d""%m""%Y)
 	version=M8
